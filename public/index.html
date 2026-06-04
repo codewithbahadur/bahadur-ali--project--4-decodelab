@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project 4 — Student Task Manager | Bahadur Ali</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface2: #1c1c26;
+      --border: #2a2a3a;
+      --accent: #7c5cfc;
+      --accent2: #fc5c7d;
+      --accent3: #5cf8c8;
+      --accent4: #fcb45c;
+      --text: #e8e8f0;
+      --muted: #6b6b80;
+      --success: #5cf8c8;
+      --danger: #fc5c7d;
+      --warn: #fcb45c;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Background grid pattern */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(124,92,252,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,92,252,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      width: 220px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 0;
+      z-index: 100;
+    }
+
+    .logo {
+      padding: 0 20px 28px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .logo-mark {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+    }
+
+    .logo-mark span { color: var(--accent2); }
+
+    .logo-sub {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 4px;
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      margin: 2px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--muted);
+      transition: all 0.2s;
+      border: none;
+      background: none;
+      width: calc(100% - 24px);
+      text-align: left;
+    }
+
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+
+    .nav-item.active {
+      background: rgba(124, 92, 252, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(124, 92, 252, 0.25);
+    }
+
+    .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .dev-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .dev-tag strong { color: var(--accent3); }
+
+    .db-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 0.65rem;
+      font-family: 'Space Mono', monospace;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .db-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--danger);
+      transition: background 0.3s;
+    }
+
+    .db-dot.on { background: var(--success); box-shadow: 0 0 6px var(--success); }
+
+    /* ── MAIN ── */
+    .main {
+      margin-left: 220px;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(10,10,15,0.8);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .page-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .page-title span { color: var(--accent); }
+
+    .badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      background: rgba(92, 248, 200, 0.1);
+      color: var(--accent3);
+      border: 1px solid rgba(92, 248, 200, 0.2);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    /* ── PAGES ── */
+    .page { display: none; padding: 32px; }
+    .page.active { display: block; }
+
+    /* ── STAT CARDS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .stat-card:hover { border-color: var(--accent); }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+
+    .stat-card.c1::before { background: var(--accent); }
+    .stat-card.c2::before { background: var(--accent2); }
+    .stat-card.c3::before { background: var(--accent3); }
+    .stat-card.c4::before { background: var(--accent4); }
+
+    .stat-label {
+      font-size: 0.7rem;
+      font-family: 'Space Mono', monospace;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .stat-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 2.2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .stat-card.c1 .stat-val { color: var(--accent); }
+    .stat-card.c2 .stat-val { color: var(--accent2); }
+    .stat-card.c3 .stat-val { color: var(--accent3); }
+    .stat-card.c4 .stat-val { color: var(--accent4); }
+
+    /* ── PANELS ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .panel-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface2);
+    }
+
+    .panel-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-title .dot-accent {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .panel-body { padding: 20px; }
+
+    /* ── FORM GRID ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .fg-full { grid-column: 1 / -1; }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.7rem;
+      font-family: 'Space Mono', monospace;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input, select, textarea {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.1);
+    }
+
+    input::placeholder { color: var(--muted); }
+
+    select option { background: var(--surface2); }
+
+    .form-actions { margin-top: 16px; display: flex; gap: 10px; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding: 9px 18px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(124, 92, 252, 0.3);
+    }
+
+    .btn-primary:hover { background: #6a4de8; box-shadow: 0 4px 20px rgba(124, 92, 252, 0.5); }
+
+    .btn-success {
+      background: rgba(92, 248, 200, 0.15);
+      color: var(--accent3);
+      border: 1px solid rgba(92, 248, 200, 0.25);
+    }
+
+    .btn-success:hover { background: rgba(92, 248, 200, 0.25); }
+
+    .btn-danger {
+      background: rgba(252, 92, 125, 0.15);
+      color: var(--accent2);
+      border: 1px solid rgba(252, 92, 125, 0.25);
+    }
+
+    .btn-danger:hover { background: rgba(252, 92, 125, 0.25); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+    .btn-warn {
+      background: rgba(252, 180, 92, 0.15);
+      color: var(--accent4);
+      border: 1px solid rgba(252, 180, 92, 0.25);
+    }
+
+    .btn-warn:hover { background: rgba(252, 180, 92, 0.25); }
+
+    .btn-sm { padding: 5px 11px; font-size: 0.73rem; }
+
+    /* ── ALERTS ── */
+    .alert {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.83rem;
+      margin-bottom: 16px;
+      display: none;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      animation: slideIn 0.3s ease;
+    }
+
+    .alert.show { display: block; }
+
+    .alert-success {
+      background: rgba(92, 248, 200, 0.1);
+      color: var(--accent3);
+      border: 1px solid rgba(92, 248, 200, 0.2);
+    }
+
+    .alert-error {
+      background: rgba(252, 92, 125, 0.1);
+      color: var(--accent2);
+      border: 1px solid rgba(252, 92, 125, 0.2);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── TABLE ── */
+    .tbl-search-bar {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tbl-search-bar input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    th {
+      padding: 10px 16px;
+      text-align: left;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 12px 16px;
+      font-size: 0.83rem;
+      color: var(--text);
+      border-bottom: 1px solid rgba(42,42,58,0.5);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(124,92,252,0.04); }
+
+    .empty-row td {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+    }
+
+    /* ── BADGES ── */
+    .badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      padding: 3px 9px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-active    { background: rgba(92,248,200,0.12); color: var(--accent3); border: 1px solid rgba(92,248,200,0.2); }
+    .badge-inactive  { background: rgba(252,92,125,0.12); color: var(--accent2); border: 1px solid rgba(252,92,125,0.2); }
+    .badge-graduated { background: rgba(252,180,92,0.12); color: var(--accent4); border: 1px solid rgba(252,180,92,0.2); }
+    .badge-high      { background: rgba(252,92,125,0.12); color: var(--accent2); border: 1px solid rgba(252,92,125,0.2); }
+    .badge-medium    { background: rgba(252,180,92,0.12); color: var(--accent4); border: 1px solid rgba(252,180,92,0.2); }
+    .badge-low       { background: rgba(92,248,200,0.12); color: var(--accent3); border: 1px solid rgba(92,248,200,0.2); }
+    .badge-done      { background: rgba(92,248,200,0.12); color: var(--accent3); border: 1px solid rgba(92,248,200,0.2); }
+    .badge-pending   { background: rgba(124,92,252,0.12); color: var(--accent);  border: 1px solid rgba(124,92,252,0.2); }
+
+    /* ── SPINNER ── */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── MODAL ── */
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    .modal-bg.show { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      width: 480px;
+      max-width: 90vw;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    }
+
+    .modal h3 {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--text);
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    /* ── DASHBOARD GRID ── */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .task-title-done {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .task-check {
+      width: 16px; height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    /* ── HERO BANNER ── */
+    .hero {
+      background: linear-gradient(135deg, rgba(124,92,252,0.1), rgba(252,92,125,0.05));
+      border: 1px solid rgba(124,92,252,0.2);
+      border-radius: 14px;
+      padding: 24px 28px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .hero-left h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .hero-left h1 span { color: var(--accent); }
+
+    .hero-left p {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .hero-right {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--muted);
+      text-align: right;
+      line-height: 1.8;
+    }
+
+    .hero-right strong { color: var(--accent3); }
+  </style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">BA<span>.</span>dev</div>
+    <div class="logo-sub">// project_04.js</div>
+  </div>
+
+  <button class="nav-item active" onclick="switchPage('dashboard', this)">
+    <span class="nav-icon">⬡</span> Dashboard
+  </button>
+  <button class="nav-item" onclick="switchPage('students', this)">
+    <span class="nav-icon">◈</span> Students
+  </button>
+  <button class="nav-item" onclick="switchPage('tasks', this)">
+    <span class="nav-icon">◇</span> Tasks
+  </button>
+
+  <div class="sidebar-footer">
+    <div class="dev-tag">
+      developer<br>
+      <strong>Bahadur Ali</strong><br>
+      DecodeLabs · 2026
+    </div>
+    <div class="db-pill">
+      <div class="db-dot" id="dot"></div>
+      <span id="db-lbl">connecting...</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<main class="main">
+
+  <div class="topbar">
+    <div class="page-title" id="topbar-title">_dashboard<span>/</span></div>
+    <div class="badge-live">
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--accent3);display:inline-block"></span>
+      LIVE · SQL Server
+    </div>
+  </div>
+
+  <!-- ══ DASHBOARD PAGE ══ -->
+  <div class="page active" id="page-dashboard">
+
+    <div class="hero">
+      <div class="hero-left">
+        <h1>Student <span>Task</span> Manager</h1>
+        <p>Full Stack · Node.js + Express + SQL Server · DecodeLabs Internship</p>
+      </div>
+      <div class="hero-right">
+        stack: node + mssql<br>
+        db: <strong>SQL Server Express</strong><br>
+        dev: <strong>Bahadur Ali</strong>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card c1">
+        <div class="stat-label">Total Students</div>
+        <div class="stat-val" id="s-students">—</div>
+      </div>
+      <div class="stat-card c2">
+        <div class="stat-label">Total Tasks</div>
+        <div class="stat-val" id="s-tasks">—</div>
+      </div>
+      <div class="stat-card c3">
+        <div class="stat-label">Completed</div>
+        <div class="stat-val" id="s-done">—</div>
+      </div>
+      <div class="stat-card c4">
+        <div class="stat-label">Pending</div>
+        <div class="stat-val" id="s-pending">—</div>
+      </div>
+    </div>
+
+    <div class="dash-grid">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><div class="dot-accent"></div> Recent Students</div>
+        </div>
+        <table>
+          <thead><tr><th>Name</th><th>Course</th><th>Grade</th><th>Status</th></tr></thead>
+          <tbody id="dash-students">
+            <tr class="empty-row"><td colspan="4"><span class="spinner"></span>Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><div class="dot-accent" style="background:var(--accent2)"></div> Recent Tasks</div>
+        </div>
+        <table>
+          <thead><tr><th>Title</th><th>Priority</th><th>Assigned</th><th>Status</th></tr></thead>
+          <tbody id="dash-tasks">
+            <tr class="empty-row"><td colspan="4"><span class="spinner"></span>Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ STUDENTS PAGE ══ -->
+  <div class="page" id="page-students">
+
+    <div id="stu-alert" class="alert"></div>
+
+    <div class="panel" style="margin-bottom:24px">
+      <div class="panel-header">
+        <div class="panel-title"><div class="dot-accent"></div> Add New Student</div>
+      </div>
+      <div class="panel-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Full Name *</label><input id="s-name" placeholder="e.g. Ali Hassan"/></div>
+          <div class="form-group"><label>Email *</label><input id="s-email" placeholder="ali@example.com"/></div>
+          <div class="form-group"><label>Course *</label><input id="s-course" placeholder="e.g. Computer Science"/></div>
+          <div class="form-group"><label>Grade</label><input id="s-grade" placeholder="e.g. A, B+"/></div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="s-status">
+              <option>Active</option>
+              <option>Inactive</option>
+              <option>Graduated</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="addStudent()">+ Add Student</button>
+          <button class="btn btn-ghost" onclick="clearStudentForm()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="dot-accent"></div> All Students</div>
+        <button class="btn btn-ghost btn-sm" onclick="loadStudents()">↺ Refresh</button>
+      </div>
+      <div class="tbl-search-bar">
+        <input id="stu-search" placeholder="Search by name, email, course..." oninput="filterStudents()"/>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Course</th><th>Grade</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="stu-tbody">
+          <tr class="empty-row"><td colspan="7"><span class="spinner"></span>Loading from database...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ TASKS PAGE ══ -->
+  <div class="page" id="page-tasks">
+
+    <div id="task-alert" class="alert"></div>
+
+    <div class="panel" style="margin-bottom:24px">
+      <div class="panel-header">
+        <div class="panel-title"><div class="dot-accent" style="background:var(--accent2)"></div> Add New Task</div>
+      </div>
+      <div class="panel-body">
+        <div class="form-grid">
+          <div class="form-group fg-full"><label>Task Title *</label><input id="t-title" placeholder="e.g. Complete Project 4 frontend"/></div>
+          <div class="form-group fg-full"><label>Description</label><input id="t-desc" placeholder="Brief description..."/></div>
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="t-priority">
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Assign to Student</label>
+            <select id="t-student"><option value="">— Unassigned —</option></select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-success" onclick="addTask()">+ Add Task</button>
+          <button class="btn btn-ghost" onclick="clearTaskForm()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="dot-accent" style="background:var(--accent2)"></div> All Tasks</div>
+        <button class="btn btn-ghost btn-sm" onclick="loadTasks()">↺ Refresh</button>
+      </div>
+      <table>
+        <thead><tr><th>Done</th><th>Title</th><th>Priority</th><th>Assigned To</th><th>Actions</th></tr></thead>
+        <tbody id="task-tbody">
+          <tr class="empty-row"><td colspan="5"><span class="spinner"></span>Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── EDIT MODAL ── -->
+<div class="modal-bg" id="edit-modal">
+  <div class="modal">
+    <h3>✏ Edit Student</h3>
+    <input type="hidden" id="edit-id"/>
+    <div class="form-grid">
+      <div class="form-group"><label>Name</label><input id="edit-name"/></div>
+      <div class="form-group"><label>Email</label><input id="edit-email"/></div>
+      <div class="form-group"><label>Course</label><input id="edit-course"/></div>
+      <div class="form-group"><label>Grade</label><input id="edit-grade"/></div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="edit-status">
+          <option>Active</option><option>Inactive</option><option>Graduated</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-warn" onclick="saveEdit()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── API HELPER ──
+async function api(method, url, body = null) {
+  try {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res  = await fetch(url, opts);
+    const data = await res.json();
+    return { ok: res.ok, status: res.status, data };
+  } catch (err) {
+    return { ok: false, status: 0, data: { message: 'Cannot connect to server.' } };
+  }
+}
+
+function showAlert(id, message, type = 'success') {
+  const el = document.getElementById(id);
+  el.className = `alert alert-${type} show`;
+  el.textContent = message;
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+const pageTitles = {
+  dashboard: '_dashboard/',
+  students:  '_students/',
+  tasks:     '_tasks/'
+};
+
+function switchPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  document.getElementById('topbar-title').innerHTML =
+    pageTitles[name].replace('/', '<span>/</span>');
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'students')  loadStudents();
+  if (name === 'tasks')     { loadTasks(); loadStudentsDropdown(); }
+}
+
+function statusBadge(s) {
+  const map = { Active:'active', Inactive:'inactive', Graduated:'graduated' };
+  return `<span class="badge badge-${map[s]||'active'}">${s}</span>`;
+}
+
+function priorityBadge(p) {
+  return `<span class="badge badge-${p.toLowerCase()}">${p}</span>`;
+}
+
+// ── STATUS ──
+async function checkStatus() {
+  const r = await api('GET', '/api/status');
+  const dot = document.getElementById('dot');
+  const lbl = document.getElementById('db-lbl');
+  if (r.ok) {
+    dot.classList.add('on');
+    lbl.textContent = 'connected';
+  } else {
+    lbl.textContent = 'offline';
+  }
+}
+
+// ── DASHBOARD ──
+async function loadDashboard() {
+  const st = await api('GET', '/api/status');
+  if (st.ok) {
+    document.getElementById('s-students').textContent = st.data.students;
+    document.getElementById('s-tasks').textContent    = st.data.tasks;
+    document.getElementById('s-done').textContent     = st.data.completed;
+    document.getElementById('s-pending').textContent  = st.data.tasks - st.data.completed;
+  }
+
+  const sr = await api('GET', '/api/students');
+  const stb = document.getElementById('dash-students');
+  if (sr.ok && sr.data.students.length) {
+    stb.innerHTML = sr.data.students.slice(0, 5).map(s => `
+      <tr>
+        <td><strong>${s.Name}</strong></td>
+        <td>${s.Course}</td>
+        <td>${s.Grade}</td>
+        <td>${statusBadge(s.Status)}</td>
+      </tr>`).join('');
+  } else {
+    stb.innerHTML = '<tr class="empty-row"><td colspan="4">No students yet.</td></tr>';
+  }
+
+  const tr2 = await api('GET', '/api/tasks');
+  const ttb = document.getElementById('dash-tasks');
+  if (tr2.ok && tr2.data.tasks.length) {
+    ttb.innerHTML = tr2.data.tasks.slice(0, 5).map(t => `
+      <tr>
+        <td class="${t.Completed ? 'task-title-done' : ''}">${t.Title}</td>
+        <td>${priorityBadge(t.Priority)}</td>
+        <td>${t.StudentName || '<em style="color:var(--muted)">—</em>'}</td>
+        <td><span class="badge ${t.Completed ? 'badge-done' : 'badge-pending'}">${t.Completed ? 'Done' : 'Pending'}</span></td>
+      </tr>`).join('');
+  } else {
+    ttb.innerHTML = '<tr class="empty-row"><td colspan="4">No tasks yet.</td></tr>';
+  }
+}
+
+// ── STUDENTS ──
+let allStudents = [];
+
+async function loadStudents() {
+  const tbody = document.getElementById('stu-tbody');
+  tbody.innerHTML = '<tr class="empty-row"><td colspan="7"><span class="spinner"></span>Loading from database...</td></tr>';
+  const r = await api('GET', '/api/students');
+  if (!r.ok) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">❌ ${r.data.message}</td></tr>`;
+    return;
+  }
+  allStudents = r.data.students;
+  renderStudents(allStudents);
+}
+
+function renderStudents(students) {
+  const tbody = document.getElementById('stu-tbody');
+  if (!students.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No students found. Add one above!</td></tr>';
+    return;
+  }
+  tbody.innerHTML = students.map((s, i) => `
+    <tr>
+      <td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:0.72rem">${String(i+1).padStart(2,'0')}</td>
+      <td><strong>${s.Name}</strong></td>
+      <td style="color:var(--muted)">${s.Email}</td>
+      <td>${s.Course}</td>
+      <td style="font-family:'Space Mono',monospace">${s.Grade}</td>
+      <td>${statusBadge(s.Status)}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-warn btn-sm" onclick="openEdit(${s.Id})">✏ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.Id}, '${s.Name.replace(/'/g,"\\'")}')">✕</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterStudents() {
+  const q = document.getElementById('stu-search').value.toLowerCase();
+  renderStudents(allStudents.filter(s =>
+    s.Name.toLowerCase().includes(q) ||
+    s.Email.toLowerCase().includes(q) ||
+    s.Course.toLowerCase().includes(q)
+  ));
+}
+
+async function addStudent() {
+  const body = {
+    name  : document.getElementById('s-name').value,
+    email : document.getElementById('s-email').value,
+    course: document.getElementById('s-course').value,
+    grade : document.getElementById('s-grade').value,
+    status: document.getElementById('s-status').value
+  };
+  const r = await api('POST', '/api/students', body);
+  if (r.ok) {
+    showAlert('stu-alert', '✓ ' + r.data.message, 'success');
+    clearStudentForm();
+    loadStudents();
+  } else {
+    showAlert('stu-alert', '✕ ' + r.data.message, 'error');
+  }
+}
+
+async function deleteStudent(id, name) {
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  const r = await api('DELETE', `/api/students/${id}`);
+  if (r.ok) {
+    showAlert('stu-alert', '✓ ' + r.data.message, 'success');
+    loadStudents();
+  } else {
+    showAlert('stu-alert', '✕ ' + r.data.message, 'error');
+  }
+}
+
+function clearStudentForm() {
+  ['s-name','s-email','s-course','s-grade'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('s-status').value = 'Active';
+}
+
+function openEdit(id) {
+  const s = allStudents.find(x => x.Id === id);
+  if (!s) return;
+  document.getElementById('edit-id').value     = s.Id;
+  document.getElementById('edit-name').value   = s.Name;
+  document.getElementById('edit-email').value  = s.Email;
+  document.getElementById('edit-course').value = s.Course;
+  document.getElementById('edit-grade').value  = s.Grade;
+  document.getElementById('edit-status').value = s.Status;
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('show');
+}
+
+async function saveEdit() {
+  const id   = document.getElementById('edit-id').value;
+  const body = {
+    name  : document.getElementById('edit-name').value,
+    email : document.getElementById('edit-email').value,
+    course: document.getElementById('edit-course').value,
+    grade : document.getElementById('edit-grade').value,
+    status: document.getElementById('edit-status').value
+  };
+  const r = await api('PUT', `/api/students/${id}`, body);
+  if (r.ok) {
+    showAlert('stu-alert', '✓ Student updated!', 'success');
+    closeModal();
+    loadStudents();
+  } else {
+    showAlert('stu-alert', '✕ ' + r.data.message, 'error');
+  }
+}
+
+// ── TASKS ──
+async function loadTasks() {
+  const tbody = document.getElementById('task-tbody');
+  tbody.innerHTML = '<tr class="empty-row"><td colspan="5"><span class="spinner"></span>Loading...</td></tr>';
+  const r = await api('GET', '/api/tasks');
+  if (!r.ok) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="5">❌ ${r.data.message}</td></tr>`;
+    return;
+  }
+  if (!r.data.tasks.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No tasks yet. Add one above!</td></tr>';
+    return;
+  }
+  tbody.innerHTML = r.data.tasks.map(t => `
+    <tr>
+      <td><input type="checkbox" class="task-check" ${t.Completed ? 'checked' : ''} onchange="toggleTask(${t.Id})"/></td>
+      <td>
+        <span class="${t.Completed ? 'task-title-done' : ''}">${t.Title}</span>
+        ${t.Description ? `<br><small style="color:var(--muted);font-size:0.72rem">${t.Description}</small>` : ''}
+      </td>
+      <td>${priorityBadge(t.Priority)}</td>
+      <td style="color:var(--muted)">${t.StudentName || '<em>—</em>'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteTask(${t.Id}, '${t.Title.replace(/'/g,"\\'")}')">✕</button></td>
+    </tr>`).join('');
+}
+
+async function loadStudentsDropdown() {
+  const sel = document.getElementById('t-student');
+  const r   = await api('GET', '/api/students');
+  if (r.ok) {
+    sel.innerHTML = '<option value="">— Unassigned —</option>' +
+      r.data.students.map(s => `<option value="${s.Id}">${s.Name}</option>`).join('');
+  }
+}
+
+async function addTask() {
+  const body = {
+    title      : document.getElementById('t-title').value,
+    description: document.getElementById('t-desc').value,
+    priority   : document.getElementById('t-priority').value,
+    studentId  : document.getElementById('t-student').value || null
+  };
+  const r = await api('POST', '/api/tasks', body);
+  if (r.ok) {
+    showAlert('task-alert', '✓ ' + r.data.message, 'success');
+    clearTaskForm();
+    loadTasks();
+  } else {
+    showAlert('task-alert', '✕ ' + r.data.message, 'error');
+  }
+}
+
+async function toggleTask(id) {
+  const r = await api('PUT', `/api/tasks/${id}/toggle`);
+  if (r.ok) loadTasks();
+  else showAlert('task-alert', '✕ ' + r.data.message, 'error');
+}
+
+async function deleteTask(id, title) {
+  if (!confirm(`Delete task "${title}"?`)) return;
+  const r = await api('DELETE', `/api/tasks/${id}`);
+  if (r.ok) {
+    showAlert('task-alert', '✓ ' + r.data.message, 'success');
+    loadTasks();
+  } else {
+    showAlert('task-alert', '✕ ' + r.data.message, 'error');
+  }
+}
+
+function clearTaskForm() {
+  document.getElementById('t-title').value = '';
+  document.getElementById('t-desc').value  = '';
+  document.getElementById('t-priority').value = 'Medium';
+  document.getElementById('t-student').value  = '';
+}
+
+// ── INIT ──
+checkStatus();
+loadDashboard();
+</script>
+</body>
+</html>
